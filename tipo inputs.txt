@@ -1,0 +1,576 @@
+idInput, nombre, tipo, valor, valorAutocomplete
+
+
+checbox:
+locomotive
+relacion operacion
+relacion pagos
+Rectificaciones
+
+autocomplete:
+grupo clientes
+almacen
+cliente
+usuario
+
+password
+contraseña
+
+text:
+prefijosello
+prefijorango
+rango final
+Factura
+referencia
+parReferencia
+Trafico
+patente
+aduana
+
+date
+fecha inicial
+fecha final
+parFechaInicial
+parFechaFInal
+
+multidata:
+Aduanas
+referencia
+
+select:
+Operacion importacion - exportacion
+
+tipo operacion importacion, exportacion
+
+Reporte sello general - sin utilizar - cancelados
+
+-
+confirmacion visual de actualizacion
+actualizar tab de datos al usar boton actualizar
+agregar si esta activo o no el reporte
+boton de actualizar datos del reporte o agregar dependiendo cual se pulse
+
+-
+
+
+<div class="modal fade" id="modalCorreosP" tabindex="-1" aria-labelledby="modalCorreosLabelP" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalWizardLabel">Añadir Input</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="height: 40vh;">
+                <div>
+                    <label for="inpNombreInput">Nombre</label>
+                    <input type="text" name="inpNombreInput" id="inpNombreInput">
+                </div>
+                <div>
+                    <label for="inpTipo">Tipo</label>
+                    <select name="inpTipo" id="inpTipo" style="margin-bottom: 10px;">
+                        <option value="text">Text</option>
+                        <option value="autoComplete">auto complete</option>
+                        <option value="select">Select</option>
+                        <option value="multidata">Multi data</option>
+                        <option value="checkbox">Checkbox</option>
+                        <option value="password">Password</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="inpTablaAutComplete">Tabla auto complete</label>
+                    <input type="text" name="inpTablaAutComplete" id="inpTablaAutComplete">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+exec selectInputReportes 1
+exec selectInputsFueraReporte 2
+select * from Inputs
+select * from catalogoReportes
+select * from ReportesInputs
+
+
+exec createInput 'fecha final','date',null,null
+
+exec unirReporteInput 6, 2, 4
+
+select * from funidad_universal
+
+
+
+SELECT table_name
+FROM information_schema.tables
+WHERE table_type = 'BASE TABLE'
+
+SELECT table_name
+FROM information_schema.tables
+WHERE table_type = 'BASE TABLE' AND (TABLE_NAME like 'fcliente%') ;
+
+where @NombreTabla IS NULL OR (TABLE_NAME like @NombreTabla+'%')  
+
+CREATE PROCEDURE seletecTablaAutoComplete
+@NombreTabla NVARCHAR(100) = NULL
+AS
+BEGIN
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_type = 'BASE TABLE' AND (@NombreTabla IS NULL OR TABLE_NAME LIKE @NombreTabla + '%') order by TABLE_NAME;
+END
+
+
+exec seletecTablaAutoComplete 'fcliente'
+
+exec unirReporteInputPosicion 1,1,1
+
+exec selectInputReportes 1
+
+
+exec eliminarReporteInputPosicion 8, 1
+
+select * from ReportesInputs order by id_reporte
+
+select * from Inputs
+
+alter table Inputs
+add valorId int
+
+
+
+USE [aduasism3]
+GO
+/****** Object:  StoredProcedure [dbo].[selectPorNombreCliente]    Script Date: 12/14/2023 1:59:38 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE autoCompleteReporteador
+@filtro NVARCHAR(100) = NULL,
+@tabla NVARCHAR(100) = NULL,
+@id NVARCHAR(100) = NULL,
+@valor NVARCHAR(100) = NULL
+AS
+BEGIN
+select @id as ID, @valor as valor
+from FCLIENTE 
+where @filtro IS NULL OR (@valor like '%'+@filtro+'%')  or (@id like '%'+@filtro+'%') or (@id + ' ' + @valor like '%'+@filtro+'%')
+END
+
+ALTER PROCEDURE autoCompleteReporteador
+@filtro NVARCHAR(100) = NULL,
+@tabla NVARCHAR(100) = NULL,
+@id NVARCHAR(100) = NULL,
+@valor NVARCHAR(100) = NULL
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX)
+	
+
+    SET @sql = '
+        SELECT ' + QUOTENAME(@id) + ' AS ID, ' + QUOTENAME(@valor) + ' AS valor
+        FROM ' + QUOTENAME(@tabla) + '
+		where ' + QUOTENAME(@valor) + ' like ''%'+QUOTENAME(@filtro)+'%'''
+
+    EXEC sp_executesql @sql
+END
+
+
+select * from catalogoReportes
+
+
+update catalogoReportes set activo =1 where id_reporte = 1
+select * from ReportesInputs
+delete catalogoReportes where activo = 1
+
+select * from catalogoReportes where id_reporte = 74
+
+
+ALTER PROCEDURE insertCatalogoReporte
+@descripcion VARCHAR(255),
+@sp_reporte VARCHAR(255),
+@activo INT
+AS
+BEGIN
+    DECLARE @InsertedID INT;
+
+    INSERT INTO catalogoReportes
+    OUTPUT INSERTED.id_reporte -- Esta línea devuelve la ID asignada
+    VALUES (@descripcion, @sp_reporte, @activo);
+
+    -- Guarda la ID asignada en la variable
+    SET @InsertedID = SCOPE_IDENTITY();
+
+    -- Puedes hacer algo con la ID, como devolverla o usarla en otra parte del procedimiento
+
+    SELECT @InsertedID AS 'ID'; -- Esta línea devuelve la ID asignada
+END;
+
+SELECT SPECIFIC_NAME,ORDINAL_POSITION,PARAMETER_MODE,PARAMETER_NAME,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH FROM information_schema.parameters WHERE specific_name
+
+USE [aduasism3]
+GO
+/****** Object:  StoredProcedure [dbo].[seletecTablaAutoComplete]    Script Date: 12/14/2023 1:03:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[seletecTablaAutoComplete]
+@NombreTabla NVARCHAR(100) = NULL
+AS
+BEGIN
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_type = 'BASE TABLE' AND (@NombreTabla IS NULL OR TABLE_NAME LIKE @NombreTabla + '%') order by TABLE_NAME;
+END
+
+select * from Inputs
+
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Inputs';
+
+create procedure obtenerColumnas
+@nombreTabla varchar(255),
+@columna varchar(255)
+as
+begin
+SELECT COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = @nombreTabla AND (@columna IS NULL OR COLUMN_NAME LIKE @columna + '%');
+end
+
+select top 1 * from FCLIENTE
+
+create PROCEDURE	
+	@nombre varchar(255),
+	@tipo varchar(255),
+	@valor varchar(255),
+	@valorAutocomplete varchar(50),
+	@valorId varchar(255)
+AS
+BEGIN
+	insert into Inputs values (@nombre,@tipo,@valor, @valorAutocomplete, @valorId)
+END;
+
+select * from Inputs
+
+exec createInput 'ClientesF', 'autoComplete', 'RAZON_SOCIAL', 'FCLIENTE', 'ID_CLIENTE'
+
+alter table Inputs
+alter column valorID varchar(255)
+
+select top 1* from fdespacho
+
+select * from catalogoReportes
+
+
+exec selectInputReportes 85
+
+select id_usuario as id, nombre as nombre from fusuario
+where nombre like '%aaron%'
+
+
+
+
+SELECT ' + QUOTENAME(@id) + ' AS ID, ' + QUOTENAME(@valor) + ' AS valor
+        FROM ' + QUOTENAME(@tabla) + '
+        WHERE ' + QUOTENAME(@filtro) + ' IS NULL OR (' + QUOTENAME(@valor) + ' LIKE ''%''+' + QUOTENAME(@filtro) + '+''%'')
+            OR (' + QUOTENAME(@id) + ' LIKE ''%'' +'+ QUOTENAME(@filtro) + '+''%'')
+
+
+
+PRUEBAS NUEVAS:
+exec selectInputReportes 1
+
+exec autoCompleteReporteador 'zapaliname', 'FCLIENTE', 'ID_CLIENTE', 'RAZON_SOCIAL'
+
+select  
+   'Parameter_name' = name,  
+   'Type'   = type_name(user_type_id),  
+   'Length'   = max_length,  
+   'Prec'   = case when type_name(system_type_id) = 'uniqueidentifier' 
+              then precision  
+              else OdbcPrec(system_type_id, max_length, precision) end,  
+   'Scale'   = OdbcScale(system_type_id, scale),  
+   'Param_order'  = parameter_id,  
+   'Collation'   = convert(sysname, 
+                   case when system_type_id in (35, 99, 167, 175, 231, 239)  
+                   then ServerProperty('collation') end)  
+
+  from sys.parameters where object_id = object_id('con_FacturacionUsuario')
+
+  delete ReportesInputs where id_reporte = 91
+  select * from ReportesInputs
+  delete from catalogoReportes where id_reporte = 91
+  select * from ReporteCliente
+  
+    select * from catalogoReportes 
+
+select * from Inputs
+
+ALTER TABLE Inputs
+ADD valoresSelect TEXT,
+    textoSelect TEXT,
+    checked INT CHECK (checked IN (1, 0)),
+    informacionAdicional TEXT;
+
+
+
+
+    USE [aduasism3]
+GO
+/****** Object:  StoredProcedure [dbo].[createInput]    Script Date: 12/18/2023 1:26:33 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[createInput]
+	@nombre varchar(255),
+	@tipo varchar(255),
+	@valor varchar(255),
+	@valorAutocomplete varchar(50),
+	@valorId varchar(255),
+	@valorSelect varchar(255),
+	@textoSelect varchar(255),
+	@checked int,
+	@informacionAdicional varchar(255),
+	@hora time
+AS
+BEGIN
+	insert into Inputs values (@nombre,@tipo,@valor, @valorAutocomplete, @valorId, @valorSelect, @textoSelect,@checked, @informacionAdicional, @hora)
+END;
+
+select * from Inputs;
+
+delete Inputs where idInput = 6
+
+
+select  
+   'Parameter_name' = name,  
+   'Type'   = type_name(user_type_id),  
+   'Length'   = max_length,  
+   'Prec'   = case when type_name(system_type_id) = 'uniqueidentifier' 
+              then precision  
+              else OdbcPrec(system_type_id, max_length, precision) end,  
+   'Scale'   = OdbcScale(system_type_id, scale),  
+   'Param_order'  = parameter_id,  
+   'Collation'   = convert(sysname, 
+                   case when system_type_id in (35, 99, 167, 175, 231, 239)  
+                   then ServerProperty('collation') end)  
+
+  from sys.parameters where object_id = object_id('Igl_Inventarios')
+
+  EXEC selectInputReportes 1
+
+  select top 1 * from fbodega
+
+  select * from inputs
+
+  delete inputs where idInput = 32
+
+  alter table inputs
+  add hora time
+
+falta agregar que dependiendo la seleccion se muestren* 
+
+falta agregar que el select sea de varios*
+
+quitar que se muestren los datos en la barra arriba*
+
+agregar que se muestre el tooltip*
+
+en caso de cambiar el tipo de reporte, limpiar la info en pantalla*
+
+
+
+revisar lo de la fecha y hora, probable tener que añadir un timepicker tambien o que eliga una hora en especifico.*
+
+
+agregar comprobacion en caso de que ya exista un tipo de input asi *
+
+revisar la manera de implementar un desplegable para los valores de los select - importante*
+
+agregar que al buscar se ponga un spiner*
+
+fechas modificar la hora*
+
+select top 1 * from fgrupo
+
+
+select  
+   'Parameter_name' = name,  
+   'Type'   = type_name(user_type_id),  
+   'Length'   = max_length,  
+   'Prec'   = case when type_name(system_type_id) = 'uniqueidentifier' 
+              then precision  
+              else OdbcPrec(system_type_id, max_length, precision) end,  
+   'Scale'   = OdbcScale(system_type_id, scale),  
+   'Param_order'  = parameter_id,  
+   'Collation'   = convert(sysname, 
+                   case when system_type_id in (35, 99, 167, 175, 231, 239)  
+                   then ServerProperty('collation') end)  
+
+  from sys.parameters where object_id = object_id('Igl_Almacenajes_ABB')
+
+  select * from Inputs
+
+  select* from catalogoReportes
+
+CREATE PROCEDURE updateCatalogoReporte
+@idReporte int,
+@descripcion VARCHAR(255),
+@sp_reporte VARCHAR(255),
+@activo INT
+AS
+BEGIN
+    update catalogoReportes
+	set descripcion = @descripcion,
+	sp_reporte = @sp_reporte,
+	activo = @activo
+	where id_reporte = @idReporte
+END;
+
+
+select * from catalogoReportes
+
+select * from ReportesInputs
+
+delete ReportesInputs where idInput = 1
+
+select * from catalogoReportes
+delete from catalogoReportes where id_reporte > 2
+
+select * from inputs
+
+delete Inputs where idInput = 1
+
+select top 1 * from fbodega
+
+select * from inputs
+
+USE [aduasism3]
+GO
+/****** Object:  StoredProcedure [dbo].[insertCatalogoReporte]    Script Date: 12/19/2023 4:10:39 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[insertCatalogoReporte]
+@descripcion VARCHAR(255),
+@sp_reporte VARCHAR(255),
+@activo INT
+AS
+BEGIN
+    DECLARE @InsertedID INT;
+
+    INSERT INTO catalogoReportes
+    OUTPUT INSERTED.id_reporte -- Esta línea devuelve la ID asignada
+    VALUES (@descripcion, @sp_reporte, @activo);
+
+    -- Guarda la ID asignada en la variable
+    SET @InsertedID = SCOPE_IDENTITY();
+
+    -- Puedes hacer algo con la ID, como devolverla o usarla en otra parte del procedimiento
+
+    SELECT @InsertedID AS 'ID'; -- Esta línea devuelve la ID asignada
+END;
+
+
+
+control de excepciones-*
+
+pestaña para ver catalogo de inputs*
+
+revisar problema con dates al actualizar repo*
+
+revisar cambio de obtener info para el datatable al buscar reporte*
+
+agregar datatable para el modal*
+
+agregar metodo de busqueda para los inputs.*
+
+agregarles editar inputs*
+
+agregar modal de editar inputs.*
+
+select * from Inputs
+
+SELECT COLUMN_NAME, DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Inputs';
+
+CREATE PROCEDURE actualizarInputsReportes
+    @idInput INT,
+    @nombreInput VARCHAR(255),
+    @tipo VARCHAR(50),
+    @valor TEXT,
+    @valorAutocomplete VARCHAR(255),
+    @valorId VARCHAR(255),
+    @valoresSelect TEXT,
+    @textoSelect TEXT,
+    @checked INT,
+    @informacionAdicional TEXT,
+    @hora TIME
+AS
+BEGIN
+    UPDATE Inputs
+    SET
+        nombreInput = @nombreInput,
+        tipo = @tipo,
+        valor = @valor,
+        valorAutocomplete = @valorAutocomplete,
+        valorId = @valorId,
+        valoresSelect = @valoresSelect,
+        textoSelect = @textoSelect,
+        checked = @checked,
+        informacionAdicional = @informacionAdicional,
+        hora = @hora
+    WHERE idInput = @idInput;
+END;
+
+
+
+corregir todo el script de correo *
+hacer cambio a la bd para Reportes grandes *
+agregar link directo al servidor *
+revisar select catalogo sellos por que hace algo raro con el uppercase*
+revisar actualizar reporte se empiezan a mostrar doble*
+solucionar al actualizar reporte a pesado, se recargen los inpus de la izquierda, sobre todo los botones.*
+revisar select general ya que agrega el select extra*
+cambiar tamaño y pesado a select*
+formatear la hora de la fecha al mostrarla*
+agregar for de horas al abrir desde moda añadir input*
+script que elimine correos despues de x dias de creacion*
+ver por que la tabla se generara rara cuando no es muy ancha*
+cliente 9999 al correo interno*
+agregar mensaje de fecha limite para correo a eliminar*
+no aparece nombre al crear reporte*
+al modificar reporte, se cambia el seleccionado*
+ordenar por descripcion los reportes*
+cambio del update, enviar toda la info en un json y hacer en servidor las consultas*
+agregar alerta al asignar que diga "asignado correctamente, total de correos asignados previamente*
+pulir front*
+al agregar reporte y actualizar el select, se va hasta el ultimo.*
+Documentar JS *
+tratar de simplificarlo a funciones*
+cambiar la hora de date a autoComplete pero verificar el formato de la hora para que puedan especificar horas*
+agregar nuevo tipo de input que obtenga informacion del servidor, este input va a estar oculto y si esta, va tener el valor del campo que quiere del servidor
+ejemplo, el usuario "Usuario", seran para variables de sesion.*
+
+documentar php las funciones de manera mas espefica
+
+hacer pruebas, crear diferentes reportes
+
+buscar errores nuevos.
+
+
+
+
+

@@ -1,0 +1,53 @@
+fieldset {
+    border: 0;
+}
+
+#lblReporte {
+    display: block;
+}
+
+.overflow {
+    height: 100px;
+}
+
+
+.ui-autocomplete {
+    max-height: 100px;
+    max-width: 200px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+    font-family: Verdana,Arial,sans-serif;
+    font-size: 12px;
+    z-index: 3000;
+  }
+  /* IE 6 doesn't support max-height
+   * we use height instead, but this forces the menu to always be this tall
+   */
+  * html .ui-autocomplete {
+    height: 100px;
+    font-family: Verdana,Arial,sans-serif;
+    font-size: 12px;
+    z-index: 3000;
+  }
+  
+  .inputView{
+    height: 60vh;
+    max-height: 60vh;
+    overflow: hidden;
+    overflow-y: scroll;
+  }
+  li{
+    background: #ffff;
+  }
+
+  .ui-selectmenu-menu {
+    z-index: 3000; /* o cualquier valor mayor que el z-index del modal */
+}
+#grupoSelect{
+  height: 40vh;
+  max-height: 50vh;
+  overflow: hidden;
+  overflow-y: scroll;
+}
+
