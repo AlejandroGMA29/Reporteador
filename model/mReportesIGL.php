@@ -1,7 +1,153 @@
 <?php
+// Requiere la clase SQLExecute para la conexión a la base de datos
+require_once('/var/www/html/proyecto/public_html/CexecuteSQL.php');
 
-function crearExcel($nombre, $datos)
+require_once('/var/www/html/proyecto/resources/excel/Classes/PHPExcel.php');
+require_once('/var/www/html/proyecto/resources/excel/Classes/PHPExcel/Writer/Excel2007.php');
+
+require_once('/var/www/html/include/PHPMailer/class.phpmailer.php');   // falta revisar localizacion en server.
+require_once('/var/www/html/include/PHPMailer/class.smtp.php');  // falta revisar localizacion en server.
+
+class mReportesIGL
 {
+    // Conexión a la base de datos
+    private $db_conn;
+
+    // Constructor que establece la conexión a la base de datos
+    public function __construct()
+    {
+        // Crear una instancia de SQLExecute con la conexión 'IGLSQL'
+        $this->db_conn = new SQLExecute('IGLSQL');
+    }
+
+    // Función para obtener datos de reportes
+    public function obtenerDatosReportes() {
+        // Inicia la sesión
+        session_start();
+
+        // Consulta SQL para obtener todos los reportes
+        $cmdsqlReporte = "SELECT * FROM catalogoReportes";
+
+        // Si el usuario no es admin, filtra solo los reportes activos
+        $concatenacion = $_SESSION["Usuario"] == 1 ? "" : " WHERE activo = 1";
+
+        // Agrega la condición al comando SQL
+        $cmdsqlReporte .= $concatenacion . " ORDER BY descripcion ASC";
+
+        // Ejecuta la consulta SQL
+        $datosReporte = $this->db_conn->Execsql("SELECT", $cmdsqlReporte);
+
+        // Devuelve los datos de los reportes en formato JSON
+        return $datosReporte;
+    }
+
+    // Función para eliminar archivos Excel
+    public function eliminarArchivosExcel($valoresArray, $ruta_archivo) {
+        // Array para almacenar mensajes de respuesta
+        $resp = array();
+
+        // Itera sobre cada valor en el array
+        foreach ($valoresArray as $valores) {
+            // Construye la ruta completa del archivo a eliminar
+            $ruta_completa = $ruta_archivo . $valores;
+
+            // Intenta eliminar el archivo
+            if (unlink($ruta_completa)) {
+                $resp[] = array(
+                    "mensaje" => 'Se eliminó el archivo correctamente',
+                    "datos" => $ruta_archivo,
+                    "Nombre" => $valores,
+                );
+            } else {
+                $resp[] = array(
+                    "mensaje" => 'No se eliminó el archivo',
+                    "datos" => $ruta_archivo,
+                    "Nombre" => $valores,
+                );
+            }
+        }
+
+        // Devuelve el array de respuestas
+        return $resp;
+    }
+
+    public function cargarReporte($valoresArray, $titulosArray, $id_reporte) {
+        // Consulta SQL para obtener información del reporte
+        $cmdsqlReporte = "SELECT * FROM catalogoReportes WHERE id_reporte = $id_reporte";
+        $datosReporte = $this->db_conn->Execsql("SELECT", $cmdsqlReporte);
+
+        // Extrae la información necesaria del catálogo de reportes
+        $sp_reporte = $datosReporte[0]["sp_reporte"];
+        $nombre = $datosReporte[0]["descripcion"];
+
+        // Construye el comando SQL para ejecutar el stored procedure del reporte
+        $cmdsql = "EXEC $sp_reporte ";
+
+        // Agrega placeholders para los parámetros del stored procedure
+        foreach ($valoresArray as &$valor) {
+            $cmdsql .= ' ?,';
+        }
+
+        // Elimina la coma extra al final del comando SQL
+        $resultcmdsql = substr($cmdsql, 0, -1);
+
+        // Parámetros para el stored procedure
+        $params = [...$valoresArray];
+
+        // Ejecuta el stored procedure y obtiene los datos del reporte
+        $datos = $this->db_conn->Execsql('SP-PARAM', $resultcmdsql, $params);
+
+        // Crea el archivo Excel y obtiene detalles sobre el proceso
+        $resp = crearExcel($nombre, $datos); // Asegúrate de tener la función crearExcel implementada
+
+        // Nombre del archivo Excel generado
+        $nombreExcel = $resp['Nombre'];
+
+        // Respuesta final que se enviará como JSON
+        $respuesta = [
+            "datos" => $datos,
+            "resp" => $resp,
+            "sp" => $cmdsql,
+            "error" => 0
+        ];
+        return $respuesta;
+    }
+
+    public function agregarReporte($nombreRepo, $SPRepor, $activo, $pesado) {
+        // Definir el comando SQL para insertar un nuevo reporte
+        $cmdsqlReporte = "exec insertCatalogoReporte ?, ?, ?, ?";
+
+        // Preparar los parámetros para el comando SQL
+        $params = array($nombreRepo, $SPRepor, $activo, $pesado);
+
+        // Ejecutar el comando SQL utilizando el método 'Execsql' con el modo 'SP-PARAM'
+        $datosInputs = $this->db_conn->Execsql("SP-PARAM", $cmdsqlReporte, $params);
+        return $datosInputs;
+    }
+
+    public function modificarReporte($idRepo, $nombreRepo, $SPRepor, $activo, $pesado) {
+        // Definir el comando SQL para actualizar un reporte en la base de datos
+        $cmdsqlReporte = "exec updateCatalogoReporte ?, ?, ?, ?, ?";
+
+        // Preparar los parámetros para el comando SQL
+        $params = array($idRepo, $nombreRepo, $SPRepor, $activo, $pesado);
+
+        // Ejecutar el comando SQL utilizando el método 'Execsql' con el modo 'SP-PARAM'
+        $datosInputs = $this->db_conn->Execsql("SP-PARAM", $cmdsqlReporte, $params);
+        return $datosInputs;
+    }
+
+    public function datosReporte($idReporte) {
+        // Definir el comando SQL para seleccionar los datos específicos del reporte con el ID especificado
+        $cmdsqlReporte = "SELECT * FROM catalogoReportes WHERE id_reporte = {$idReporte}";
+
+        // Ejecutar el comando SQL utilizando el método 'Execsql' con el modo 'SELECT'
+        $datosReporte = $this->db_conn->Execsql("SELECT", $cmdsqlReporte);
+        return $datosReporte;
+    }
+
+
+    function crearExcel($nombre, $datos){
     // Reemplaza espacios en blanco en el nombre
     $nombreF = str_replace(' ', '', $nombre);
 
@@ -154,38 +300,5 @@ function crearExcel($nombre, $datos)
     // Devuelve la respuesta
     return $resp;
 }
-
-function incrementarLetra($letra)
-{
-    // Obtiene la longitud de la cadena de letras
-    $longitud = strlen($letra);
-
-    // Inicializa la variable de desbordamiento
-    $overflow = true;
-
-    // Itera sobre cada carácter de la cadena de letras de derecha a izquierda
-    for ($i = $longitud - 1; $i >= 0; $i--) {
-        $caracter = $letra[$i];
-
-        // Verifica si hay desbordamiento
-        if ($overflow) {
-            // Si el carácter es 'Z', reinicia a 'A'
-            if ($caracter == 'Z') {
-                $letra[$i] = 'A';
-            } else {
-                // Incrementa el carácter en uno
-                $letra[$i] = chr(ord($caracter) + 1);
-                $overflow = false;
-            }
-        }
-    }
-
-    // Si hay desbordamiento, agrega 'A' al principio de la cadena
-    if ($overflow) {
-        $letra = 'A' . $letra;
-    }
-
-    // Devuelve la cadena de letras incrementada
-    return $letra;
 }
 ?>
